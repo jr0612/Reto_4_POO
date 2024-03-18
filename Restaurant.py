@@ -56,6 +56,7 @@ class MainCourse(MenuItem):
 class Order:
     def __init__(self):
         self.items = []
+        self.__total_bill = 0
         
 
     def add_item(self, item: MenuItem, quantity=1):
@@ -104,7 +105,11 @@ class Order:
         
         return total_bill
     def get_total_bill(self):
-        return self.__calculate_total_bill
+        if self.__total_bill ==0:
+            self.__total_bill = self.__calculate_total_bill()
+        return self.__total_bill
+    
+
     def set_total_bill(self, total_bill):
         self.__calculate_total_bill = total_bill
     
@@ -112,32 +117,38 @@ class Payment:
     def __init__(self) -> None:
         pass
         
-    def pay(self, total_bill):
+    def pay(self, order: Order):
         raise NotImplementedError("Subclass should implement pay()")
     
 
 class CreditCard(Payment):
     def __init__(self, number: int, cvv: int) -> None:
         super().__init__()
+        if len(str(number)) != 16:
+            raise ValueError("The credit card number should have 16 digits")
+        if len(str(cvv)) != 3:
+            raise ValueError("The cvv should have 3 digits")
         self.number = number
         self.cvv = cvv
-    def pay(self, total_bill):
+    def pay(self, order: Order):
+        total_bill = order.get_total_bill()
         print(f"Paying $ {total_bill} with credit card {str(self.number)[-4:]}")
-        return True
+        order.set_total_bill(0)
 
 
 class Cash(Payment):
     def __init__(self, cash_received: float) -> None:
         super().__init__()
         self.cash_received = cash_received
-    def pay(self, total_bill):
+    def pay(self, order: Order):
+        total_bill = order.get_total_bill()
         if self.cash_received >= total_bill:
             print(f"Payment successfully processed.\nChange: ${round(self.cash_received - total_bill, 2)}")
-            return True
+            order.set_total_bill(0)
 
         else:
             print(f"Insufficient funds to complete the payment. Needed: ${round(total_bill - self.cash_received, 2):.2f} to complete the payment.")
-            return False
+            
 
 
 
@@ -155,8 +166,14 @@ if __name__ == "__main__":
 
 
 
-    total_bill = order.get_total_bill()()
+    total_bill = order.get_total_bill()
     print("Total Bill: $", total_bill)
-    
-    pay = CreditCard(12314234,52)
-    pay.pay(total_bill)
+
+    pay_cash = Cash(60)
+    pay_cash.pay(order)
+
+    '''    
+    pay_credit_card = CreditCard(1231423434645734,524)
+    pay_credit_card.pay(order)
+
+    '''
